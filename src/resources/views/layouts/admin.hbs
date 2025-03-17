@@ -29,6 +29,30 @@
     <link href="https://cdnjs.cloudflare.com/ajax/libs/chosen/1.8.7/chosen.min.css" rel="stylesheet" />
     <link href="https://maxcdn.bootstrapcdn.com/font-awesome/4.4.0/css/font-awesome.min.css" rel="stylesheet">
 
+    <script>
+        async function checkAdmin() {
+            try {
+                const token = localStorage.getItem("token");
+                if (!token) {
+                    window.location.href = "/";
+                }
+                const response = await fetch('http://localhost:10000/admin/checkAdmin', {
+                    method: "GET",
+                    headers: {
+                        "Authorization": `Bearer ${token}`,
+                        "Content-Type": "application/json",
+                    },
+                });
+                if (response.status === 401 || response.status === 403) {
+                    window.location.href = "/";
+                    return;
+                }
+            } catch (error) {
+                console.error("Lỗi khi tải dữ liệu:", error);
+            }
+        }
+        checkAdmin()
+    </script>
 
 </head>
 

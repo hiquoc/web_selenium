@@ -58,5 +58,43 @@ class accountController {
       return res.status(500).json({ message: "Lỗi server!" });
     }
   }
+  async product(req, res) {
+    const product_id = req.params.product_id;
+    try {
+      const ProSql = "SELECT * FROM product WHERE product_id =?";
+      let [products] = await db.query(ProSql, [product_id]);
+
+      const ImgSql = "SELECT * FROM product_image WHERE product_id =?";
+      let [images] = await db.query(ImgSql, [product_id]);
+
+      const productMap = {};
+      images.forEach((image) => {
+        const productId = image.product_id;
+        if (!productMap[productId]) {
+          productMap[productId] = { images: [], mainImg: null };
+        }
+
+        if (image.image_url.includes("/uploads/main")) {
+          productMap[productId].mainImg = image.image_url;
+        } else {
+          productMap[productId].images.push(image);
+        }
+      });
+
+      // Kết hợp sản phẩm với danh sách ảnh và ảnh chính
+      const Products = products.map((product) => ({
+        ...product,
+        mainImg: productMap[product.product_id]?.mainImg || null,
+        images:
+          productMap[product.product_id]?.images.map((img) => img.image_url) ||
+          [],
+      }));
+      console.log(Products)
+      res.render("product",{product: Products[0]})
+    } catch (error) {
+      console.error(error);
+      return res.status(500).json({ message: "Lỗi server!" });
+    }
+  }
 }
 module.exports = new accountController();

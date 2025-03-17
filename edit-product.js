@@ -1,90 +1,371 @@
 const { Builder, By, Key, until } = require("selenium-webdriver");
 const path = require("path");
+const assert = require("assert");
 
-(async function editProduct() {
-  // Khởi tạo trình duyệt Chrome
+const testCase = process.argv[2];
+
+(async function addProduct() {
   let driver = await new Builder().forBrowser("chrome").build();
 
   try {
     await driver.manage().window().maximize();
-    const productId = "19"; // ID của sản phẩm cần chỉnh sửa
-    await driver.get(`http://localhost:10000/admin/product/${productId}`);
+    const product_id = 19;
+    await driver.get(`http://localhost:10000/admin/product/${product_id}`);
+    await driver.wait(until.elementLocated(By.name("name")), 10000);
 
-    // Chờ trang tải xong
-    let wait = driver.wait(until.elementLocated(By.name("name")), 10000);
-
-    // Cập nhật tên sản phẩm
-    let nameInput = await driver.findElement(By.name("name"));
-    await nameInput.clear();
-    await nameInput.sendKeys("Trai cay 1 (500g) - Đã chỉnh");
-
-    // Cập nhật giá sản phẩm
-    let priceInput = await driver.findElement(By.name("price"));
-    await priceInput.clear();
-    await priceInput.sendKeys("300000");
-
-    // Chọn danh mục (nếu cần)
-    let category = await driver.findElement(By.name("category"));
-    await category.click();
-    await category.sendKeys(Key.ARROW_UP);
-    await category.sendKeys(Key.ENTER);
-
-    // Chọn trạng thái (nếu cần)
-    let status = await driver.findElement(By.name("status"));
-    await status.click();
-    await status.sendKeys(Key.ARROW_UP);
-    await status.sendKeys(Key.ENTER);
-
-    // Tùy chọn: Tải lên ảnh mới hoặc giữ ảnh cũ
-    let uploadNewImage = true; // Đổi thành false nếu không muốn thay ảnh mới
-
-    if (uploadNewImage) {
-      let imagePath1 = path.resolve("img1.webp");
-      let imagePath2 = path.resolve("img2.webp");
-      let upload = await driver.findElement(By.id("product-images"));
-      await upload.sendKeys(`${imagePath1}\n${imagePath2}`);
-
-      await driver.sleep(1000); 
-
-      // Kiểm tra nếu có ảnh thì mới chọn ảnh đầu tiên
-      let images = await driver.findElements(By.css(".small-img"));
-      if (images.length > 0) {
-        let firstImage = images[0];
-        await driver.executeScript(
-          "arguments[0].scrollIntoView();",
-          firstImage
-        );
-        await driver.sleep(1000);
-        await firstImage.click();
+    const runTest = async (id, description, testFunc) => {
+      if (!testCase || testCase == id) {
+        console.log(`Test ${id}: ${description}`);
+        await testFunc();
       }
-    }
+    };
 
-    let submitButton = await driver.findElement(
-      By.css("button[type='submit']")
-    );
-
-    // Cuộn đến nút submit trước khi nhấn
-    await driver.executeScript("arguments[0].scrollIntoView();", submitButton);
-    await driver.sleep(1000);
-
-    await submitButton.click();
-
-    // Chờ phản hồi từ server
-    try {
-      let alertTextElement = await driver.wait(
-        until.elementLocated(By.id("alert-text")),
-        5000
+    // Test Case 1: Không nhập tên sản phẩm
+    await runTest(1, "Không nhập tên sản phẩm", async () => {
+      await driver.findElement(By.name("name")).clear();
+      await driver.sleep(1000);
+      let submitButton = await driver.findElement(
+        By.css("button[type='submit']")
       );
-      let alertText = await alertTextElement.getText();
-      console.log("Thông báo từ server:", alertText);
-    } catch (error) {
-      console.log("Không nhận được phản hồi từ server!");
-    }
 
-    // Giữ trình duyệt mở để kiểm tra kết quả
-    console.log("Nhấn Enter để đóng trình duyệt...");
-    process.stdin.resume();
+      // Cuộn đến nút submit trước khi nhấn
+      await driver.executeScript(
+        "arguments[0].scrollIntoView();",
+        submitButton
+      );
+      await driver.sleep(1000);
+      await submitButton.click();
+      await driver.sleep(1000);
+      let alertElement = await driver.findElements(By.id("alert-text"));
+      let errorMsg = await alertElement[0].getText();
+      console.log("Lỗi hiển thị:", errorMsg);
+      assert.equal(errorMsg, "Vui lòng điền tên sản phẩm!");
+    });
+
+    // Test Case 2: Không điền giá
+    await runTest(2, "Không điền giá", async () => {
+      await driver.findElement(By.name("name")).sendKeys("Chuối");
+      await driver.findElement(By.name("price")).clear();
+      await driver.findElement(By.name("price")).sendKeys("");
+      let submitButton = await driver.findElement(
+        By.css("button[type='submit']")
+      );
+
+      // Cuộn đến nút submit trước khi nhấn
+      await driver.executeScript(
+        "arguments[0].scrollIntoView();",
+        submitButton
+      );
+      await driver.sleep(1000);
+      await submitButton.click();
+      await driver.sleep(1000);
+      let alertElement = await driver.findElements(By.id("alert-text"));
+      let errorMsg = await alertElement[0].getText();
+      console.log("Lỗi hiển thị:", errorMsg);
+      assert.equal(errorMsg, "Vui lòng điền giá sản phẩm!");
+    });
+
+    // Test Case 3: Nhập giá không hợp lệ (chữ)
+    await runTest(3, "Nhập giá không hợp lệ", async () => {
+      await driver.findElement(By.name("name")).sendKeys("Chuối");
+      await driver.findElement(By.name("price")).clear();
+      await driver.findElement(By.name("price")).sendKeys("abc");
+      let submitButton = await driver.findElement(
+        By.css("button[type='submit']")
+      );
+
+      // Cuộn đến nút submit trước khi nhấn
+      await driver.executeScript(
+        "arguments[0].scrollIntoView();",
+        submitButton
+      );
+      await driver.sleep(1000);
+      await submitButton.click();
+      await driver.sleep(1000);
+      let alertElement = await driver.findElements(By.id("alert-text"));
+      let errorMsg = await alertElement[0].getText();
+      console.log("Lỗi hiển thị:", errorMsg);
+      assert.equal(errorMsg, "Vui lòng kiểm tra lại giá!");
+    });
+
+    // Test Case 4: Nhập giá quá dài
+    await runTest(4, "Nhập giá quá dài", async () => {
+      await driver.findElement(By.name("name")).clear();
+      await driver.findElement(By.name("name")).sendKeys("Chuối");
+      await driver.findElement(By.name("price")).clear();
+      await driver.findElement(By.name("price")).sendKeys("123456789012");
+      let submitButton = await driver.findElement(
+        By.css("button[type='submit']")
+      );
+      // Cuộn đến nút submit trước khi nhấn
+      await driver.executeScript(
+        "arguments[0].scrollIntoView();",
+        submitButton
+      );
+      await driver.sleep(1000);
+      await submitButton.click();
+      await driver.sleep(1000);
+      let alertElement = await driver.findElements(By.id("alert-text"));
+      let errorMsg = await alertElement[0].getText();
+      console.log("Lỗi hiển thị:", errorMsg);
+      assert.equal(errorMsg, "Vui lòng kiểm tra lại giá!");
+    });
+
+    await runTest(5, "Nhập giá âm", async () => {
+      await driver.findElement(By.name("name")).clear();
+      await driver.findElement(By.name("name")).sendKeys("Chuối");
+      await driver.findElement(By.name("price")).clear();
+      await driver.findElement(By.name("price")).sendKeys("-50000");
+      let submitButton = await driver.findElement(
+        By.css("button[type='submit']")
+      );
+      // Cuộn đến nút submit trước khi nhấn
+      await driver.executeScript(
+        "arguments[0].scrollIntoView();",
+        submitButton
+      );
+      await driver.sleep(1000);
+      await submitButton.click();
+
+      await driver.sleep(1000);
+      let alertElement = await driver.findElements(By.id("alert-text"));
+      let errorMsg = await alertElement[0].getText();
+      console.log("Lỗi hiển thị:", errorMsg);
+      assert.equal(errorMsg, "Giá sản phẩm phải là số dương!");
+    });
+
+    // Test Case 6: Không chọn danh mục
+    await runTest(6, "Không chọn danh mục", async () => {
+      let category = await driver.findElement(By.name("category"));
+      await category.click();
+      await category.sendKeys(Key.ARROW_UP);
+      await category.sendKeys(Key.ARROW_UP);
+      await category.sendKeys(Key.ARROW_UP);
+      await category.sendKeys(Key.ENTER);
+      let submitButton = await driver.findElement(
+        By.css("button[type='submit']")
+      );
+      // Cuộn đến nút submit trước khi nhấn
+      await driver.executeScript(
+        "arguments[0].scrollIntoView();",
+        submitButton
+      );
+      await driver.sleep(1000);
+      await submitButton.click();
+
+      await driver.sleep(1000);
+      let alertElement = await driver.findElements(By.id("alert-text"));
+      let errorMsg = await alertElement[0].getText();
+      console.log("Lỗi hiển thị:", errorMsg);
+      assert.equal(errorMsg, "Vui lòng chọn danh mục sản phẩm!");
+    });
+
+    // Test Case 7: Không nhập số lượng
+    await runTest(7, "Không nhập số lượng", async () => {
+      await driver.findElement(By.name("stock")).clear();
+      let submitButton = await driver.findElement(
+        By.css("button[type='submit']")
+      );
+      // Cuộn đến nút submit trước khi nhấn
+      await driver.executeScript(
+        "arguments[0].scrollIntoView();",
+        submitButton
+      );
+      await driver.sleep(1000);
+      await submitButton.click();
+
+      await driver.sleep(1000);
+      let alertElement = await driver.findElements(By.id("alert-text"));
+      let errorMsg = await alertElement[0].getText();
+      console.log("Lỗi hiển thị:", errorMsg);
+      assert.equal(errorMsg, "Vui lòng nhập số lượng sản phẩm!");
+    });
+
+    // Test Case 8: Nhập số lượng âm
+    await runTest(8, "Nhập số lượng âm", async () => {
+      await driver.findElement(By.name("stock")).clear();
+      await driver.findElement(By.name("stock")).sendKeys("-500");
+      let submitButton = await driver.findElement(
+        By.css("button[type='submit']")
+      );
+      // Cuộn đến nút submit trước khi nhấn
+      await driver.executeScript(
+        "arguments[0].scrollIntoView();",
+        submitButton
+      );
+      await driver.sleep(1000);
+      await submitButton.click();
+      await driver.sleep(1000);
+      let alertElement = await driver.findElements(By.id("alert-text"));
+      let errorMsg = await alertElement[0].getText();
+      console.log("Lỗi hiển thị:", errorMsg);
+      assert.equal(errorMsg, "Số lượng phải là số không âm!");
+    });
+
+    // Test Case 9: Nhập số lượng quá dài
+    await runTest(9, "Nhập số lượng quá dài", async () => {
+      await driver.findElement(By.name("stock")).clear();
+      await driver.findElement(By.name("stock")).sendKeys("999999999999");
+      let submitButton = await driver.findElement(
+        By.css("button[type='submit']")
+      );
+      // Cuộn đến nút submit trước khi nhấn
+      await driver.executeScript(
+        "arguments[0].scrollIntoView();",
+        submitButton
+      );
+      await driver.sleep(1000);
+      await submitButton.click();
+      await driver.sleep(1000);
+      let alertElement = await driver.findElements(By.id("alert-text"));
+      let errorMsg = await alertElement[0].getText();
+      console.log("Lỗi hiển thị:", errorMsg);
+      assert.equal(errorMsg, "Vui lòng kiểm tra lại số lượng!");
+    });
+
+    // Test Case 10: Không chọn trạng thái
+    await runTest(10, "Không chọn trạng thái", async () => {
+      let status = await driver.findElement(By.name("status"));
+      await status.click();
+      await status.sendKeys(Key.ARROW_UP);
+      await status.sendKeys(Key.ARROW_UP);
+      await status.sendKeys(Key.ARROW_UP);
+      await status.sendKeys(Key.ENTER);
+      let submitButton = await driver.findElement(
+        By.css("button[type='submit']")
+      );
+      // Cuộn đến nút submit trước khi nhấn
+      await driver.executeScript(
+        "arguments[0].scrollIntoView();",
+        submitButton
+      );
+      await driver.sleep(1000);
+      await submitButton.click();
+
+      await driver.sleep(1000);
+      let alertElement = await driver.findElements(By.id("alert-text"));
+      let errorMsg = await alertElement[0].getText();
+      console.log("Lỗi hiển thị:", errorMsg);
+      assert.equal(errorMsg, "Vui lòng chọn trạng thái sản phẩm!");
+    });
+
+    // Test Case 11: Không nhập mô tả sản phẩm
+    await runTest(11, "Không nhập mô tả sản phẩm", async () => {
+      await driver.findElement(By.name("details")).clear();
+      let submitButton = await driver.findElement(
+        By.css("button[type='submit']")
+      );
+      // Cuộn đến nút submit trước khi nhấn
+      await driver.executeScript(
+        "arguments[0].scrollIntoView();",
+        submitButton
+      );
+      await driver.sleep(1000);
+      await submitButton.click();
+
+      await driver.sleep(1000);
+      let alertElement = await driver.findElements(By.id("alert-text"));
+      let errorMsg = await alertElement[0].getText();
+      console.log("Lỗi hiển thị:", errorMsg);
+      assert.equal(errorMsg, "Vui lòng nhập mô tả sản phẩm!");
+    });
+
+    // Test Case 12: Không chọn ảnh chính
+    await runTest(12, "Không chọn ảnh chính", async () => {
+      let imagePaths = ["img1.webp", "img2.webp"].map((img) =>
+        path.resolve(img)
+      );
+      let upload = await driver.findElement(By.id("product-images"));
+      for (let imgPath of imagePaths) {
+        await upload.sendKeys(imgPath);
+      }
+      await driver.sleep(1000);
+      let submitButton = await driver.findElement(
+        By.css("button[type='submit']")
+      );
+
+      // Cuộn đến nút submit trước khi nhấn
+      await driver.executeScript(
+        "arguments[0].scrollIntoView();",
+        submitButton
+      );
+      await driver.sleep(1000);
+      await submitButton.click();
+      await driver.sleep(1000);
+      let alertElement = await driver.findElements(By.id("alert-text"));
+      let errorMsg = await alertElement[0].getText();
+      console.log("Lỗi hiển thị:", errorMsg);
+      assert.equal(errorMsg, "Vui lòng chọn ảnh chính!");
+    });
+
+    // Test Case 13: Nhập thông tin hợp lệ và sửa thành công
+    await runTest(13, "Nhập thông tin hợp lệ", async () => {
+      let imagePaths = ["img1.webp", "img2.webp"].map((img) =>
+        path.resolve(img)
+      );
+      let upload = await driver.findElement(By.id("product-images"));
+      for (let imgPath of imagePaths) {
+        await upload.sendKeys(imgPath);
+      }
+      let firstImage = await driver.findElement(By.css(".small-img"));
+      await driver.executeScript("arguments[0].scrollIntoView();", firstImage);
+      await driver.sleep(1000);
+      await firstImage.click();
+      await driver.sleep(1000);
+      let submitButton = await driver.findElement(
+        By.css("button[type='submit']")
+      );
+
+      // Cuộn đến nút submit trước khi nhấn
+      await driver.executeScript(
+        "arguments[0].scrollIntoView();",
+        submitButton
+      );
+      await driver.sleep(1000);
+      await submitButton.click();
+      await driver.sleep(1000);
+      let alertElement = await driver.findElements(By.id("alert-text"));
+      let errorMsg = await alertElement[0].getText();
+      console.log("Hiển thị:", errorMsg);
+      assert.equal(errorMsg, "Đăng thành công!");
+    });
+
+    // Test Case 14: Nhập tên sản phẩm bị trùng
+    await runTest(14, "Nhập tên sản phẩm bị trùng", async () => {
+      await driver.findElement(By.name("name")).clear();
+      await driver.findElement(By.name("name")).sendKeys("Cherry Đỏ New Zealand (250g)");
+      let imagePaths = ["img1.webp", "img2.webp"].map((img) =>
+        path.resolve(img)
+      );
+      let upload = await driver.findElement(By.id("product-images"));
+      for (let imgPath of imagePaths) {
+        await upload.sendKeys(imgPath);
+      }
+      let firstImage = await driver.findElement(By.css(".small-img"));
+      await driver.executeScript("arguments[0].scrollIntoView();", firstImage);
+      await driver.sleep(1000);
+      await firstImage.click();
+      await driver.sleep(1000);
+      let submitButton = await driver.findElement(
+        By.css("button[type='submit']")
+      );
+
+      // Cuộn đến nút submit trước khi nhấn
+      await driver.executeScript(
+        "arguments[0].scrollIntoView();",
+        submitButton
+      );
+      await driver.sleep(1000);
+      await submitButton.click();
+      await driver.sleep(1000);
+      let alertElement = await driver.findElements(By.id("alert-text"));
+      let errorMsg = await alertElement[0].getText();
+      console.log("Lỗi hiển thị:", errorMsg);
+      assert.equal(errorMsg, "Tên sản phẩm đã tồn tại!");
+    });
   } catch (error) {
     console.error("Lỗi xảy ra:", error);
+  } finally {
+    await driver.quit();
   }
 })();

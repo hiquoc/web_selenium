@@ -13,28 +13,27 @@
 
             <form id="product-form" enctype="multipart/form-data">
                 <div style="margin-bottom: 15px; display: flex; gap: 4%;">
-                    <input type="text" name="name" placeholder="Tên sản phẩm" value="{{product.name}}"
+                    <input type="text" name="name" placeholder="Tên sản phẩm" value="{{product.name}}" id="name"
                         style="width: 100%; padding: 12px; border: 1px solid #000000; border-radius: 0px; font-size: 16px;"
-                        maxlength="55" required>
+                        maxlength="55">
                 </div>
 
                 <div style="margin-bottom: 15px; display: flex; justify-content: space-between;align-items:center">
-                    <input type="text" name="price" placeholder="Giá" value="{{product.price}}"
+                    <input type="text" name="price" placeholder="Giá" value="{{product.price}}" id="price"
                         style="width: 24%; padding: 12px; border: 1px solid #000000; border-radius: 0px; font-size: 16px;"
-                        required maxlength="10" pattern="\d*" title="Chỉ nhận số (không quá 10 chữ số)">
+                        >
 
                     <select class="form-select" id="category" name="category"
-                        style="width: 24%; height: 49.6px; border: 1px solid #000000; font-size: 16px; border-radius: 0; margin-top: 0px; box-sizing: border-box;"
-                        required>
+                        style="width: 24%; height: 49.6px; border: 1px solid #000000; font-size: 16px; border-radius: 0; margin-top: 0px; box-sizing: border-box;">
                         <option value="">Danh mục</option>
                     </select>
                     <input type="text" style="display: none;" id="product_category" value="{{product.category}}">
-                    <input type="text" name="stock" placeholder="Số lượng" value="{{product.stock}}"
+                    <input type="text" name="stock" placeholder="Số lượng" value="{{product.stock}}" id="stock"
                         style="width: 24%; padding: 12px; border: 1px solid #000000; border-radius: 0px; font-size: 16px;"
-                        required maxlength="10" pattern="\d*" title="Chỉ nhận chữ số">
-                    <select class="form-select statusSelect" name="status"
-                        style="width: 24%; height: 49.6px; border: 1px solid #000000; font-size: 16px; border-radius: 0; margin-top: 0px; box-sizing: border-box;"
-                        required>
+                        >
+                    <select class="form-select statusSelect" name="status" id="status"
+                        style="width: 24%; height: 49.6px; border: 1px solid #000000; font-size: 16px; border-radius: 0; margin-top: 0px; box-sizing: border-box;">
+                        <option value="">Trạng thái</option>
                         <option value="con-hang" {{#ifEqual product.status "con-hang" }}selected{{/ifEqual}}>Còn
                             hàng</option>
                         <option value="het-hang" {{#ifEqual product.status "het-hang" }}selected{{/ifEqual}}>Hết
@@ -44,9 +43,8 @@
                 </div>
 
                 <div style="margin-top: 15px;">
-                    <textarea id="details" name="details" placeholder="Thông tin về sản phẩm"
-                        style="width: 100%; padding: 12px; border: 1px solid #000000; border-radius: 0px; font-size: 16px; resize: vertical;"
-                        required>{{product.description}}</textarea>
+                    <textarea id="details" name="details" placeholder="Thông tin về sản phẩm" id="details"
+                        style="width: 100%; padding: 12px; border: 1px solid #000000; border-radius: 0px; font-size: 16px; resize: vertical;">{{product.description}}</textarea>
                 </div>
 
 
@@ -139,7 +137,7 @@
                 </a>
             </div>
             <div style="display: flex;  justify-content: right;display:none">
-                    <a class="button-27" href="/admin/doanh-thu" style="background-color: #000000; color: #fff;margin-top: 15px;
+                <a class="button-27" href="/admin/doanh-thu" style="background-color: #000000; color: #fff;margin-top: 15px;
                      width: 100%; display: flex; align-items: center; justify-content: center; border: none;">
                     Thống kê
                 </a>
@@ -263,11 +261,32 @@
 </script>
 
 <script>
+    function showAlert(message) {
+        document.getElementById("alert-text").innerHTML = message;
+        $("#alertModal").modal("show");
+    }
     document.getElementById('product-form').addEventListener('submit', async function (e) {
         e.preventDefault();
         const formData = new FormData(this);
         const images = formData.getAll("images");
         const mainImageElement = document.querySelector(".small-img.main-image");
+        const name = document.getElementById("name")?.value?.trim();
+        const price = document.getElementById("price")?.value?.trim();
+        const category = document.getElementById("category")?.value?.trim();
+        const stock = document.getElementById("stock")?.value?.trim();
+        const status = document.getElementById("status")?.value?.trim();
+        const details = document.getElementById("details")?.value?.trim();
+        // Kiểm tra từng trường và hiển thị thông báo phù hợp
+        if (!name) return showAlert("Vui lòng điền tên sản phẩm!");
+        if (!price) return showAlert("Vui lòng điền giá sản phẩm!");
+        if (price.length>10 ||price.length<4) return showAlert("Vui lòng kiểm tra lại giá!");
+        if (isNaN(price) || Number(price) <= 0) return showAlert("Giá sản phẩm phải là số dương!");
+        if (!category) return showAlert("Vui lòng chọn danh mục sản phẩm!");
+        if (!stock) return showAlert("Vui lòng nhập số lượng sản phẩm!");
+        if (isNaN(stock) || Number(stock) < 0) return showAlert("Số lượng phải là số không âm!");
+        if (stock.length > 10) return showAlert("Vui lòng kiểm tra lại số lượng!");
+        if (!status) return showAlert("Vui lòng chọn trạng thái sản phẩm!");
+        if (!details) return showAlert("Vui lòng nhập mô tả sản phẩm!");
 
         if (check) {
             if (!mainImageElement) {
@@ -295,8 +314,28 @@
                 formData.append("mainImage", new File([mainFile], `main-${mainFile.name}`, { type: mainFile.type }));
             }
         }
+
+
+        //kiem tra ten san pham
         try {
-            
+            const product_id = document.getElementById("product_id").value;
+            let nameQuery = `http://localhost:10000/admin/product/checkName/${product_id}`
+            const response1 = await fetch(nameQuery, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ name }),
+            })
+            const data1 = await response1.json();
+            if (data1.message == "Tên sản phẩm đã tồn tại!") {
+                document.getElementById("alert-text").innerHTML = "Tên sản phẩm đã tồn tại!";
+                $("#alertModal").modal("show");
+                return;
+            }
+        } catch (error) {
+            alert(error)
+        }
+        try {
+
             const product_id = document.getElementById("product_id").value;
             let fetchQuery = `http://localhost:10000/admin/edit1/${product_id}`
             if (check == false) {
@@ -331,5 +370,5 @@
         } catch (error) {
             alert(error)
         }
-    });
+    })
 </script>

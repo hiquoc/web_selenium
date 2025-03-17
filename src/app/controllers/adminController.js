@@ -268,7 +268,7 @@ class AccountController {
     }
   }
 
-  async checkAdmin() {
+  async checkAdmin(req, res) {
     const authHeader = req.headers.authorization;
     if (!authHeader || !authHeader.startsWith("Bearer ")) {
       return res.status(401).json({ message: "Vui lòng đăng nhập!" });
@@ -299,6 +299,41 @@ class AccountController {
         .json({ message: "Token không hợp lệ hoặc đã hết hạn" });
     }
   }
-}
 
+  async checkName(req, res) {
+    if (req.params.product_id) {
+      const product_id = Number(req.params.product_id);
+      const { name } = req.body;
+
+      try {
+        const checkSql =
+          "SELECT * FROM product WHERE `name` = ? AND product_id != ?";
+        const [result] = await db.query(checkSql, [name, product_id]);
+        if (result.length > 0) {
+          return res.status(400).json({ message: "Tên sản phẩm đã tồn tại!" });
+        }
+        return res.status(201).json({ message: "Hợp lệ!" });
+      } catch (error) {
+        console.error("Database Query Error:", error);
+        return res.status(500).json({ message: "Lỗi server!" });
+      }
+    }
+    else{
+      const { name } = req.body;
+      try {
+        const checkSql =
+          "SELECT * FROM product WHERE name = ?";
+        const [result] = await db.query(checkSql, [name]);
+
+        if (result.length > 0) {
+          return res.status(400).json({ message: "Tên sản phẩm đã tồn tại!" });
+        }
+        return res.status(201).json({ message: "Hợp lệ!" });
+      } catch (error) {
+        console.error("Database Query Error:", error);
+        return res.status(500).json({ message: "Lỗi server!" });
+      }
+    }
+  }
+}
 module.exports = new AccountController();

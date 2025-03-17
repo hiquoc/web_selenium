@@ -265,7 +265,7 @@
         // Kiểm tra từng trường và hiển thị thông báo phù hợp
         if (!name) return showAlert("Vui lòng điền tên sản phẩm!");
         if (!price) return showAlert("Vui lòng điền giá sản phẩm!");
-        if (price.length>10) return showAlert("Vui lòng kiểm tra lại giá!");
+        if (price.length>10 ||price.length<4) return showAlert("Vui lòng kiểm tra lại giá!");
         if (isNaN(price) || Number(price) <= 0) return showAlert("Giá sản phẩm phải là số dương!");
         if (!category) return showAlert("Vui lòng chọn danh mục sản phẩm!");
         if (!stock) return showAlert("Vui lòng nhập số lượng sản phẩm!");
@@ -298,6 +298,24 @@
         if (mainFile) {
             formData.append("mainImage", new File([mainFile], `main-${mainFile.name}`, { type: mainFile.type }));
         }
+        //kiem tra ten san pham
+        try {
+            let nameQuery = `http://localhost:10000/admin/product/checkNameNew`
+            const response1 = await fetch(nameQuery, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ name }),
+            })
+            const data1 = await response1.json();
+            if (data1.message == "Tên sản phẩm đã tồn tại!") {
+                document.getElementById("alert-text").innerHTML = "Tên sản phẩm đã tồn tại!";
+                $("#alertModal").modal("show");
+                return;
+            }
+        } catch (error) {
+            alert(error)
+        }
+
         try {
 
             const response = await fetch('http://localhost:10000/admin/new-product', {
