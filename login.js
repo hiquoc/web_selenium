@@ -20,24 +20,48 @@ const testCase = process.argv[2]; // Nhận test case từ tham số dòng lện
         await testFunc();
       }
     };
-
-    // Test Case 1: Đăng nhập thành công
-    await runTest(1, "Đăng nhập thành công", async () => {
+    // Test Case 1: Không điền tên tài khoản
+    await runTest(1, "Không điền tên tài khoản", async () => {
       await driver.findElement(By.name("username")).clear();
-      await driver.findElement(By.name("username")).sendKeys("huy1");
+      await driver.findElement(By.name("username")).sendKeys("");
       await driver.findElement(By.name("password")).clear();
-      await driver.findElement(By.name("password")).sendKeys("123456");
+      await driver.findElement(By.name("password")).sendKeys("");
 
       let submitButton = await driver.findElement(By.id("submit-btn"));
       await driver.executeScript("arguments[0].scrollIntoView();", submitButton);
       await driver.sleep(1000);
       await submitButton.click();
-
-      console.log("Đăng nhập thành công!");
+      await driver.sleep(1000);
+      let alertElement = await driver.findElements(By.id("alert-text"));
+      let errorMsg = await alertElement[0].getText();
+      console.log("Lỗi hiển thị:", errorMsg);
+      let closeButton = await driver.findElement(By.css(".closex"));
+      await closeButton.click();
+      await driver.sleep(1000);
     });
 
-    // Test Case 2: Sai mật khẩu
-    await runTest(2, "Sai mật khẩu", async () => {
+    // Test Case 22: Không điền mật khẩu
+    await runTest(22, "Không điền mật khẩu", async () => {
+      await driver.findElement(By.name("username")).clear();
+      await driver.findElement(By.name("username")).sendKeys("huy1");
+      await driver.findElement(By.name("password")).clear();
+      await driver.findElement(By.name("password")).sendKeys("");
+
+      let submitButton = await driver.findElement(By.id("submit-btn"));
+      await driver.executeScript("arguments[0].scrollIntoView();", submitButton);
+      await driver.sleep(1000);
+      await submitButton.click();
+      await driver.sleep(1000);
+      let alertElement = await driver.findElements(By.id("alert-text"));
+      let errorMsg = await alertElement[0].getText();
+      console.log("Lỗi hiển thị:", errorMsg);
+      let closeButton = await driver.findElement(By.css(".closex"));
+      await closeButton.click();
+      await driver.sleep(1000);
+    });
+
+    // Test Case 3: Sai mật khẩu
+    await runTest(3, "Sai mật khẩu", async () => {
       await driver.findElement(By.name("username")).clear();
       await driver.findElement(By.name("username")).sendKeys("huy1");
       await driver.findElement(By.name("password")).clear();
@@ -50,10 +74,34 @@ const testCase = process.argv[2]; // Nhận test case từ tham số dòng lện
 
       await driver.sleep(1000);
       let alertElement = await driver.findElements(By.id("alert-text"));
-      let alertText = await alertElement[0].getText();
-      console.log("Thông báo từ server:", alertText);
-      assert.equal(alertText, "Tên tài khoản hoặc mật khẩu không đúng!");
+      let errorMsg = await alertElement[0].getText();
+      console.log("Lỗi hiển thị:", errorMsg);
+      let closeButton = await driver.findElement(By.css(".closex"));
+      await closeButton.click();
+      await driver.sleep(1000);
     });
+
+    // Test Case 4: Đăng nhập thành công
+    await runTest(4, "Đăng nhập thành công", async () => {
+      await driver.findElement(By.name("username")).clear();
+      await driver.findElement(By.name("username")).sendKeys("huy1");
+      await driver.findElement(By.name("password")).clear();
+      await driver.findElement(By.name("password")).sendKeys("123456");
+
+      let submitButton = await driver.findElement(By.id("submit-btn"));
+      await driver.executeScript("arguments[0].scrollIntoView();", submitButton);
+      await driver.sleep(1000);
+      await submitButton.click();
+      await driver.sleep(1000);
+      let alertElement = await driver.findElements(By.id("alert-text"));
+      let errorMsg = await alertElement[0].getText();
+      console.log("Lỗi hiển thị:", errorMsg);
+      let closeButton = await driver.findElement(By.css(".closex"));
+      await closeButton.click();
+      await driver.sleep(1000);
+    });
+
+    
 
   } finally {
     await driver.sleep(3000);

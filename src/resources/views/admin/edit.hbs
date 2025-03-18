@@ -20,8 +20,7 @@
 
                 <div style="margin-bottom: 15px; display: flex; justify-content: space-between;align-items:center">
                     <input type="text" name="price" placeholder="Giá" value="{{product.price}}" id="price"
-                        style="width: 24%; padding: 12px; border: 1px solid #000000; border-radius: 0px; font-size: 16px;"
-                        >
+                        style="width: 24%; padding: 12px; border: 1px solid #000000; border-radius: 0px; font-size: 16px;">
 
                     <select class="form-select" id="category" name="category"
                         style="width: 24%; height: 49.6px; border: 1px solid #000000; font-size: 16px; border-radius: 0; margin-top: 0px; box-sizing: border-box;">
@@ -29,8 +28,7 @@
                     </select>
                     <input type="text" style="display: none;" id="product_category" value="{{product.category}}">
                     <input type="text" name="stock" placeholder="Số lượng" value="{{product.stock}}" id="stock"
-                        style="width: 24%; padding: 12px; border: 1px solid #000000; border-radius: 0px; font-size: 16px;"
-                        >
+                        style="width: 24%; padding: 12px; border: 1px solid #000000; border-radius: 0px; font-size: 16px;">
                     <select class="form-select statusSelect" name="status" id="status"
                         style="width: 24%; height: 49.6px; border: 1px solid #000000; font-size: 16px; border-radius: 0; margin-top: 0px; box-sizing: border-box;">
                         <option value="">Trạng thái</option>
@@ -218,7 +216,25 @@
             document.getElementById('product-images').value = ''; // Clear the input
             return;
         }
+        for (let i = 0; i < files.length; i++) {
+            const file = files[i];
 
+            // Kiểm tra định dạng file (chỉ nhận ảnh)
+            if (!file.type.startsWith("image/")) {
+                document.getElementById("alert-text").innerHTML = "Chỉ được tải lên tệp hình ảnh!";
+                $("#alertModal").modal("show");
+                document.getElementById("product-images").value = ""; // Xóa tệp đã chọn
+                return;
+            }
+
+            // Giới hạn dung lượng 10MB
+            if (file.size > 10 * 1024 * 1024) {
+                document.getElementById("alert-text").innerHTML = "Vượt quá dung lượng tối đa 10MB!";
+                $("#alertModal").modal("show");
+                document.getElementById("product-images").value = ""; // Xóa tệp đã chọn
+                return;
+            }
+        }
         const firstFile = files[0];
         const reader = new FileReader();
         reader.onload = function (e) {
@@ -279,7 +295,7 @@
         // Kiểm tra từng trường và hiển thị thông báo phù hợp
         if (!name) return showAlert("Vui lòng điền tên sản phẩm!");
         if (!price) return showAlert("Vui lòng điền giá sản phẩm!");
-        if (price.length>10 ||price.length<4) return showAlert("Vui lòng kiểm tra lại giá!");
+        if (price.length > 10 || price.length < 4) return showAlert("Vui lòng kiểm tra lại giá!");
         if (isNaN(price) || Number(price) <= 0) return showAlert("Giá sản phẩm phải là số dương!");
         if (!category) return showAlert("Vui lòng chọn danh mục sản phẩm!");
         if (!stock) return showAlert("Vui lòng nhập số lượng sản phẩm!");
